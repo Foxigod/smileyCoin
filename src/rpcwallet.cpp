@@ -358,6 +358,56 @@ Value sendtoaddress(const Array& params, bool fHelp)
     return wtx.GetHash().GetHex();
 }
 
+
+// NEW
+Value sendtostranger(const Array& params, bool fHelp)
+{
+    if (fHelp || params.size() < 1 || params.size() > 3)
+        throw runtime_error(
+            "sendtostranger amount ( \"comment\" \"comment-to\" )\n"
+            "\nSent an amount to a stranger. The amount is a real and is rounded to the nearest 0.00000001\n"
+            + HelpRequiringPassphrase() +
+            "\nArguments:\n"
+            "1. \"amount\"             (numeric, required) The amount in SMLY to send. eg 0.1\n"
+            "2. \"comment\"            (string, optional) A comment used to store what the transaction is for. \n"
+            "                          This is not part of the transaction, just kept in your wallet.\n"
+            "3. \"comment-to\"         (string, optional) A comment to store the name of the person or organization \n"
+            "                          to which you're sending the transaction. This is not part of the \n"
+            "                          transaction, just kept in your wallet.\n"
+            "\nResult:\n"
+            "\"transactionid\"  (string) The transaction id.\n"
+            "\nExamples:\n"
+            + HelpExampleCli("sendtostranger", "0.1")
+            + HelpExampleCli("sendtostranger", "0.1 \"donation\" \"seans outpost\"")
+            + HelpExampleRpc("sendtostranger", "0.1, \"donation\", \"seans outpost\"")
+        );
+
+    CBitcoinAddress address("BH7qStrDvvoE5Smr2JE6tiBS1Bpwa6r9An"); // EDIT
+    if (!address.IsValid())
+        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid Smileycoin address");
+
+    // Amount
+    int64_t nAmount = AmountFromValue(params[0]);
+
+    // Wallet comments
+    CWalletTx wtx;
+    if (params.size() > 1 && params[1].type() != null_type && !params[1].get_str().empty())
+        wtx.mapValue["comment"] = params[1].get_str();
+    if (params.size() > 2 && params[2].type() != null_type && !params[2].get_str().empty())
+        wtx.mapValue["to"]      = params[2].get_str();
+
+    EnsureWalletIsUnlocked();
+
+    string strError = pwalletMain->SendMoneyToDestination(address.Get(), nAmount, wtx);
+    if (strError != "")
+        throw JSONRPCError(RPC_WALLET_ERROR, strError);
+
+    return wtx.GetHash().GetHex();
+}
+
+// NEW
+
+
 Value listaddressgroupings(const Array& params, bool fHelp)
 {
     if (fHelp)
